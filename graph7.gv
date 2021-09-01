@@ -1,0 +1,20 @@
+digraph g { 
+	node[shape = record, height = .1];
+	node2147483647[label = "<l> | <d> Head Node | <r> "];
+	node14[label = "<l> | <d> 14,-1 | <r>"];
+	node5[label = "<l> | <d> 5,0 | <r>"];
+	node21[label = "<l> | <d> 21,-1 | <r>"];
+	node3[label = "<l> | <d> 3,0 | <r>"];
+	node9[label = "<l> | <d> 9,0 | <r>"];
+	node18[label = "<l> | <d> 18,0 | <r>"];
+	node28[label = "<l> | <d> 28,1 | <r>"];
+	node26[label = "<l> | <d> 26,0 | <r>"];
+	"node2147483647":r -> "node14":d;
+	"node14":l -> "node5":d;
+	"node14":r -> "node21":d;
+	"node5":l -> "node3":d;
+	"node5":r -> "node9":d;
+	"node21":l -> "node18":d;
+	"node21":r -> "node28":d;
+	"node28":l -> "node26":d;
+}

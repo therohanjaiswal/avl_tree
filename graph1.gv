@@ -1,0 +1,8 @@
+digraph g { 
+	node[shape = record, height = .1];
+	node2147483647[label = "<l> | <d> Head Node | <r> "];
+	node21[label = "<l> | <d> 21,1 | <r>"];
+	node9[label = "<l> | <d> 9,0 | <r>"];
+	"node2147483647":r -> "node21":d;
+	"node21":l -> "node9":d;
+}
