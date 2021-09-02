@@ -31,6 +31,7 @@ class AVL_Tree
 {
 private:
     AVL_Node *head;
+    AVL_Node *parentOfLeftMostNode(AVL_Node *);
 
 public:
     AVL_Tree()
@@ -192,6 +193,96 @@ void AVL_Tree::AVL_Insert(int k)
         t->LChild = p;
 }
 
+void AVL_Tree::AVL_Delete(int k)
+{
+    try
+    {
+        if (AVL_Search(k))
+        {
+            AVL_Node *root = head->RChild;
+            AVL_Node *temp = root, *par = head;
+            while (temp->key != k)
+            {
+                par = temp;
+                if (temp->key < k)
+                    temp = temp->RChild;
+                else if (temp->key > k)
+                    temp = temp->LChild;
+            }
+
+            // leaf node deletion
+            if (temp->LChild == nullptr && temp->RChild == nullptr)
+            {
+                if (temp->key < par->key)
+                    par->LChild = nullptr;
+                else
+                    par->RChild = nullptr;
+            }
+
+            // if temp has single right child
+            if (temp->LChild == nullptr && temp->RChild != nullptr)
+            {
+                temp->key = temp->RChild->key;
+                // free right child node later
+                temp->RChild = nullptr;
+            }
+
+            // if temp has single left child
+            if (temp->LChild != nullptr && temp->RChild == nullptr)
+            {
+                temp->key = temp->LChild->key;
+                // free left child node later
+                temp->LChild = nullptr;
+            }
+
+            if (temp->LChild != nullptr && temp->RChild != nullptr)
+            {
+                AVL_Node *leftMostPar = parentOfLeftMostNode(temp->RChild);
+                if (leftMostPar == nullptr)
+                {
+                    temp->key = temp->RChild->key;
+                    temp->RChild = nullptr;
+                }
+                else
+                {
+                    AVL_Node *leftMost = leftMostPar->LChild;
+                    // if lefmost node has no child
+                    if (leftMost->RChild == nullptr)
+                    {
+                        temp->key = leftMost->key;
+                        leftMostPar->LChild = nullptr;
+                    }
+                    else
+                    { // if leftmost node has right child
+                        temp->key = leftMost->key;
+                        leftMost->key = leftMost->RChild->key;
+                        // free right child later
+                    }
+                }
+            }
+        }
+        else
+        {
+            throw k;
+        }
+    }
+    catch (int x)
+    {
+        cout << x << " is not presen the tree.";
+    }
+}
+
+AVL_Node *AVL_Tree::parentOfLeftMostNode(AVL_Node *curr)
+{
+    if (curr->LChild == nullptr)
+    {
+        return nullptr;
+    }
+    while (curr->LChild->LChild != nullptr)
+        curr = curr->LChild;
+    return curr;
+}
+
 bool AVL_Tree::AVL_Search(int k)
 {
     AVL_Node *root = head->RChild;
@@ -279,28 +370,36 @@ void AVL_Tree::AVL_Print()
 int main()
 {
     AVL_Tree tree;
-    // tree.AVL_Insert(21);
-    // //tree.AVL_Print();
-    // tree.AVL_Insert(9);
-    // //tree.AVL_Print();
-    // tree.AVL_Insert(5);
-    // //tree.AVL_Print();
-    // tree.AVL_Insert(14);
-    // //tree.AVL_Print();
-    // tree.AVL_Insert(28);
-    // //tree.AVL_Print();
-    // tree.AVL_Insert(18);
-    // //tree.AVL_Print();
-    // tree.AVL_Insert(3);
-    // //tree.AVL_Print();
-    // tree.AVL_Insert(26);
-    // //tree.AVL_Print();
-    // tree.AVL_Insert(30);
-    // //tree.AVL_Print();
-    // tree.AVL_Insert(15);
-    // //tree.AVL_Print();
-    // tree.AVL_Insert(16);
-    // //tree.AVL_Print();
-
-    cout << tree.AVL_Search(100) << endl;
+    tree.AVL_Insert(20);
+    //tree.AVL_Print();
+    tree.AVL_Insert(10);
+    //tree.AVL_Print();
+    tree.AVL_Insert(30);
+    //tree.AVL_Print();
+    tree.AVL_Insert(3);
+    //tree.AVL_Print();
+    tree.AVL_Insert(15);
+    //tree.AVL_Print();
+    tree.AVL_Insert(25);
+    //tree.AVL_Print();
+    tree.AVL_Insert(40);
+    //tree.AVL_Print();
+    tree.AVL_Insert(11);
+    //tree.AVL_Print();
+    tree.AVL_Insert(17);
+    //tree.AVL_Print();
+    tree.AVL_Insert(35);
+    //tree.AVL_Print();
+    tree.AVL_Print();
+    tree.AVL_Delete(3);
+    tree.AVL_Print();
+    tree.AVL_Delete(40);
+    tree.AVL_Print();
+    tree.AVL_Delete(20);
+    tree.AVL_Print();
+    // tree.AVL_Delete(28);
+    // tree.AVL_Print();
+    // tree.AVL_Delete(5);
+    // tree.AVL_Print();
+    // cout << tree.AVL_Search(100) << endl;
 }
