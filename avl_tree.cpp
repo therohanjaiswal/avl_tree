@@ -37,244 +37,270 @@ public:
     {
         head = new AVL_Node(INT_MAX);
     }
-
-    //~avl_tree();
-
-    void AVL_Insertion(int k)
+    void AVL_Insert(int);
+    void AVL_Delete(int);
+    bool AVL_Search(int);
+    void AVL_Print();
+    ~AVL_Tree()
     {
-        AVL_Node *newNode = new AVL_Node(k);
-        AVL_Node *root = head->RChild;
-        // first insertion
-        if (root == nullptr)
-        {
-            head->RChild = newNode;
-            return;
-        }
+        delete head;
+    }
+};
 
-        AVL_Node *t = head, *s = root, *p = root, *q, *r;
+void AVL_Tree::AVL_Insert(int k)
+{
+    AVL_Node *newNode = new AVL_Node(k);
+    AVL_Node *root = head->RChild;
+    // first insertion
+    if (root == nullptr)
+    {
+        head->RChild = newNode;
+        return;
+    }
 
-        while (true)
-        {
-            try
-            {
-                if (k < p->key)
-                {
-                    q = p->LChild;
-                    if (q == nullptr)
-                    {
-                        q = newNode;
-                        p->LChild = q;
-                        break;
-                    }
-                    else if (q->bf != 0)
-                    {
-                        t = p;
-                        s = q;
-                    }
-                    p = q;
-                }
-                else if (k > p->key)
-                {
-                    q = p->RChild;
-                    if (q == nullptr)
-                    {
-                        q = newNode;
-                        p->RChild = q;
-                        break;
-                    }
-                    else if (q->bf != 0)
-                    {
-                        t = p;
-                        s = q;
-                    }
-                    p = q;
-                }
-                else
-                {
-                    throw newNode->key;
-                }
-            }
-            catch (int x)
-            {
-                cout << x << " is already present";
-                return;
-            }
-        }
+    AVL_Node *t = head, *s = root, *p = root, *q, *r;
 
-        int a = k < s->key ? 1 : -1; // a denotes in which side of s the insertion took place
-        p = (a == 1) ? s->LChild : s->RChild;
-        r = p;
-        while (p != q)
+    while (true)
+    {
+        try
         {
             if (k < p->key)
             {
-                p->bf = 1;
-                p = p->LChild;
+                q = p->LChild;
+                if (q == nullptr)
+                {
+                    q = newNode;
+                    p->LChild = q;
+                    break;
+                }
+                else if (q->bf != 0)
+                {
+                    t = p;
+                    s = q;
+                }
+                p = q;
             }
             else if (k > p->key)
             {
-                p->bf = -1;
-                p = p->RChild;
+                q = p->RChild;
+                if (q == nullptr)
+                {
+                    q = newNode;
+                    p->RChild = q;
+                    break;
+                }
+                else if (q->bf != 0)
+                {
+                    t = p;
+                    s = q;
+                }
+                p = q;
+            }
+            else
+            {
+                throw newNode->key;
             }
         }
-
-        if (s->bf == 0)
+        catch (int x)
         {
-            s->bf = a;
+            cout << x << " is already present";
             return;
         }
-        else if (s->bf == -1 * a)
-        {
-            s->bf = 0;
-            return;
-        }
-        else
-        {
-            // single rotation
-            if (r->bf == a)
-            {
-                if (a == 1)
-                {
-                    p = r;
-                    s->LChild = r->RChild;
-                    r->RChild = s;
-                    s->bf = 0;
-                    r->bf = 0;
-                }
-                else if (a == -1)
-                {
-                    p = r;
-                    s->RChild = r->LChild;
-                    r->LChild = s;
-                    s->bf = 0;
-                    r->bf = 0;
-                }
-            }
-
-            //double rotation
-            else if (r->bf == -1 * a)
-            {
-                if (a == 1)
-                {
-                    p = r->RChild;
-                    r->RChild = p->LChild;
-                    p->LChild = r;
-                    s->LChild = p->RChild;
-                    p->RChild = s;
-                    s->bf = (p->bf == 0) ? 0 : (p->bf == 1 ? -1 : 0);
-                    r->bf = (p->bf == 0) ? 0 : (p->bf == 1 ? 0 : 1);
-                    p->bf = 0;
-                }
-                else if (a == -1)
-                {
-                    p = r->LChild;
-                    r->LChild = p->RChild;
-                    p->RChild = r;
-                    s->RChild = p->LChild;
-                    p->LChild = s;
-                    s->bf = p->bf == 0 ? 0 : (p->bf == 1 ? 0 : 1);
-                    r->bf = p->bf == 0 ? 0 : (p->bf == 1 ? -1 : 0);
-                    p->bf = 0;
-                }
-            }
-        }
-
-        if (s == t->RChild)
-            t->RChild = p;
-        else
-            t->LChild = p;
     }
 
-    void printTree()
+    int a = k < s->key ? 1 : -1; // a denotes in which side of s the insertion took place
+    p = (a == 1) ? s->LChild : s->RChild;
+    r = p;
+    while (p != q)
     {
-        // forming initial part of "graph.gv file"
-        ofstream stream;
-        string str = "graph";
-        str.append(to_string(result++));
-        str.append(".gv");
-        stream.open(str);
-        stream << "digraph g { \n\tnode[shape = record, height = .1];\n";
-        stream << "\tnode" << INT_MAX << "[label = \"<l> | <d> Head Node | <r> \"];\n";
-
-        AVL_Node *root = head->RChild; // curr points to left child of dummy node i.e., root of actual TBST
-        // when tree is empty
-        if (root == nullptr)
-            cout << "Tree is empty" << endl;
-        else
+        if (k < p->key)
         {
-            string nodeString = "";    // to store the details of every node
-            string pointerString = ""; // to store the pointers details
-            ostringstream oss;
-            queue<AVL_Node *> q; // queue to perform level order traversal
-            q.push(root);
+            p->bf = 1;
+            p = p->LChild;
+        }
+        else if (k > p->key)
+        {
+            p->bf = -1;
+            p = p->RChild;
+        }
+    }
 
-            while (!q.empty())
+    if (s->bf == 0)
+    {
+        s->bf = a;
+        return;
+    }
+    else if (s->bf == -1 * a)
+    {
+        s->bf = 0;
+        return;
+    }
+    else
+    {
+        // single rotation
+        if (r->bf == a)
+        {
+            if (a == 1)
             {
-                AVL_Node *node = q.front();
+                p = r;
+                s->LChild = r->RChild;
+                r->RChild = s;
+                s->bf = 0;
+                r->bf = 0;
+            }
+            else if (a == -1)
+            {
+                p = r;
+                s->RChild = r->LChild;
+                r->LChild = s;
+                s->bf = 0;
+                r->bf = 0;
+            }
+        }
+
+        //double rotation
+        else if (r->bf == -1 * a)
+        {
+            if (a == 1)
+            {
+                p = r->RChild;
+                r->RChild = p->LChild;
+                p->LChild = r;
+                s->LChild = p->RChild;
+                p->RChild = s;
+                s->bf = (p->bf == 0) ? 0 : (p->bf == 1 ? -1 : 0);
+                r->bf = (p->bf == 0) ? 0 : (p->bf == 1 ? 0 : 1);
+                p->bf = 0;
+            }
+            else if (a == -1)
+            {
+                p = r->LChild;
+                r->LChild = p->RChild;
+                p->RChild = r;
+                s->RChild = p->LChild;
+                p->LChild = s;
+                s->bf = p->bf == 0 ? 0 : (p->bf == 1 ? 0 : 1);
+                r->bf = p->bf == 0 ? 0 : (p->bf == 1 ? -1 : 0);
+                p->bf = 0;
+            }
+        }
+    }
+
+    if (s == t->RChild)
+        t->RChild = p;
+    else
+        t->LChild = p;
+}
+
+bool AVL_Tree::AVL_Search(int k)
+{
+    AVL_Node *root = head->RChild;
+    if (root == nullptr)
+        return false;
+
+    while (root != nullptr)
+    {
+        if (root->key == k)
+            return true;
+        else if (root->key < k)
+            root = root->RChild;
+        else
+            root = root->LChild;
+    }
+    return false;
+}
+
+void AVL_Tree::AVL_Print()
+{
+    // forming initial part of "graph.gv file"
+    ofstream stream;
+    string str = "graph";
+    str.append(to_string(result++));
+    str.append(".gv");
+    stream.open(str);
+    stream << "digraph g { \n\tnode[shape = record, height = .1];\n";
+    stream << "\tnode" << INT_MAX << "[label = \"<l> | <d> Head Node | <r> \"];\n";
+
+    AVL_Node *root = head->RChild; // curr points to left child of dummy node i.e., root of actual TBST
+    // when tree is empty
+    if (root == nullptr)
+        cout << "Tree is empty" << endl;
+    else
+    {
+        string nodeString = "";    // to store the details of every node
+        string pointerString = ""; // to store the pointers details
+        ostringstream oss;
+        queue<AVL_Node *> q; // queue to perform level order traversal
+        q.push(root);
+
+        while (!q.empty())
+        {
+            AVL_Node *node = q.front();
+            // storing node details
+            oss << "\tnode" << node->key << "[label = \"<l> | <d> " << node->key << "," << node->bf << " | <r>\"];\n";
+            nodeString.append(oss.str());
+            oss.str("");
+            oss.clear();
+
+            // Enqueue left child
+            if (node->LChild != nullptr)
+            {
+                q.push(node->LChild);
                 // storing node details
-                oss << "\tnode" << node->key << "[label = \"<l> | <d> " << node->key << "," << node->bf << " | <r>\"];\n";
-                nodeString.append(oss.str());
+                oss << "\t\"node" << node->key << "\":l -> \"node" << node->LChild->key << "\":d;\n";
+                pointerString.append(oss.str());
                 oss.str("");
                 oss.clear();
-
-                // Enqueue left child
-                if (node->LChild != nullptr)
-                {
-                    q.push(node->LChild);
-                    // storing node details
-                    oss << "\t\"node" << node->key << "\":l -> \"node" << node->LChild->key << "\":d;\n";
-                    pointerString.append(oss.str());
-                    oss.str("");
-                    oss.clear();
-                }
-
-                // Enqueue right child
-                if (node->RChild != nullptr)
-                {
-                    q.push(node->RChild);
-                    // storing node details
-                    oss << "\t\"node" << node->key << "\":r -> \"node" << node->RChild->key << "\":d;\n";
-                    pointerString.append(oss.str());
-                    oss.str("");
-                    oss.clear();
-                }
-                q.pop();
             }
-            stream << nodeString;
-            // stream << "\t\"node" << root->key << "\":l -> \"node" << root->leftChild->data << "\":d;\n";
-            stream << "\t\"node" << head->key << "\":r -> \"node" << head->RChild->key << "\":d;\n";
-            stream << pointerString;
-        }
 
-        // writing nodes details and pointer details on graph.gv
-        stream << "}";
-        stream.close();
+            // Enqueue right child
+            if (node->RChild != nullptr)
+            {
+                q.push(node->RChild);
+                // storing node details
+                oss << "\t\"node" << node->key << "\":r -> \"node" << node->RChild->key << "\":d;\n";
+                pointerString.append(oss.str());
+                oss.str("");
+                oss.clear();
+            }
+            q.pop();
+        }
+        stream << nodeString;
+        // stream << "\t\"node" << root->key << "\":l -> \"node" << root->leftChild->data << "\":d;\n";
+        stream << "\t\"node" << head->key << "\":r -> \"node" << head->RChild->key << "\":d;\n";
+        stream << pointerString;
     }
-};
+
+    // writing nodes details and pointer details on graph.gv
+    stream << "}";
+    stream.close();
+}
 
 int main()
 {
     AVL_Tree tree;
-    tree.AVL_Insertion(21);
-    tree.printTree();
-    tree.AVL_Insertion(9);
-    tree.printTree();
-    tree.AVL_Insertion(5);
-    tree.printTree();
-    tree.AVL_Insertion(14);
-    tree.printTree();
-    tree.AVL_Insertion(28);
-    tree.printTree();
-    tree.AVL_Insertion(18);
-    tree.printTree();
-    tree.AVL_Insertion(3);
-    tree.printTree();
-    tree.AVL_Insertion(26);
-    tree.printTree();
-    tree.AVL_Insertion(30);
-    tree.printTree();
-    tree.AVL_Insertion(15);
-    tree.printTree();
-    tree.AVL_Insertion(16);
-    tree.printTree();
+    // tree.AVL_Insert(21);
+    // //tree.AVL_Print();
+    // tree.AVL_Insert(9);
+    // //tree.AVL_Print();
+    // tree.AVL_Insert(5);
+    // //tree.AVL_Print();
+    // tree.AVL_Insert(14);
+    // //tree.AVL_Print();
+    // tree.AVL_Insert(28);
+    // //tree.AVL_Print();
+    // tree.AVL_Insert(18);
+    // //tree.AVL_Print();
+    // tree.AVL_Insert(3);
+    // //tree.AVL_Print();
+    // tree.AVL_Insert(26);
+    // //tree.AVL_Print();
+    // tree.AVL_Insert(30);
+    // //tree.AVL_Print();
+    // tree.AVL_Insert(15);
+    // //tree.AVL_Print();
+    // tree.AVL_Insert(16);
+    // //tree.AVL_Print();
+
+    cout << tree.AVL_Search(100) << endl;
 }
