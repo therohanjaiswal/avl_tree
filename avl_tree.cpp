@@ -12,7 +12,7 @@ class AVL_Node
 {
 private:
     int key;
-    int bf;
+    int bf; // height of left subtree - height of right subtree
     AVL_Node *LChild, *RChild;
 
 public:
@@ -29,7 +29,11 @@ public:
 class AVL_Tree
 {
 private:
-    AVL_Node *head;
+    AVL_Node *head; // head points to dummy node
+    void AVL_RR_Rotation(AVL_Node *, AVL_Node *, int);
+    void AVL_LL_Rotation(AVL_Node *, AVL_Node *, int);
+    void AVL_LR_Rotation(AVL_Node *, AVL_Node *, int, string);
+    void AVL_RL_Rotation(AVL_Node *, AVL_Node *, int, string);
 
 public:
     AVL_Tree()
@@ -50,6 +54,7 @@ void AVL_Tree::AVL_Insert(int k)
 {
     AVL_Node *newNode = new AVL_Node(k);
     AVL_Node *root = head->RChild;
+
     // first insertion
     if (root == nullptr)
     {
@@ -57,329 +62,392 @@ void AVL_Tree::AVL_Insert(int k)
         return;
     }
 
-    AVL_Node *t = head, *s = root, *p = root, *q, *r;
+    // rebalancingPoint points to node where rebalancing may be necessary
+    // parent points to parent of rebalancingPoint
+    // cursor is used for traversal
+    // cursorNext point to the child of cursor
+    AVL_Node *parent = head, *rebalancingPoint = root;
+    AVL_Node *cursor = root, *cursorNext;
 
     while (true)
     {
         try
         {
-            if (k < p->key)
+            if (k < cursor->key) // if k is smaller than cursor->key
             {
-                q = p->LChild;
-                if (q == nullptr)
+                cursorNext = cursor->LChild;
+                if (cursorNext == nullptr) // if cursor reached the leaf node
                 {
-                    q = newNode;
-                    p->LChild = q;
+                    cursorNext = newNode;
+                    cursor->LChild = cursorNext; // make newNode as left child of cursor
                     break;
                 }
-                else if (q->bf != 0)
+                else if (cursorNext->bf != 0) // if balance factor of cursorNext is non-zero
                 {
-                    t = p;
-                    s = q;
+                    parent = cursor;
+                    rebalancingPoint = cursorNext;
                 }
-                p = q;
+                cursor = cursorNext;
             }
-            else if (k > p->key)
+            else if (k > cursor->key) // if k is greater than cursor->key
             {
-                q = p->RChild;
-                if (q == nullptr)
+                cursorNext = cursor->RChild;
+                if (cursorNext == nullptr) // if cursor reached the leaf node
                 {
-                    q = newNode;
-                    p->RChild = q;
+                    cursorNext = newNode;
+                    cursor->RChild = cursorNext; // make newNode as right child of cursor
                     break;
                 }
-                else if (q->bf != 0)
+                else if (cursorNext->bf != 0) // if balance factor of cursorNext is non-zero
                 {
-                    t = p;
-                    s = q;
+                    parent = cursor;
+                    rebalancingPoint = cursorNext;
                 }
-                p = q;
+                cursor = cursorNext;
             }
-            else
-            {
-                throw newNode->key;
-            }
+            else                    // if k already exists in the tree
+                throw newNode->key; // throw exception
         }
         catch (int x)
         {
-            cout << x << " is already present";
+            cout << x << " is already present in the tree.";
             return;
         }
     }
 
-    int a = k < s->key ? 1 : -1; // a denotes in which side of s the insertion took place
-    p = (a == 1) ? s->LChild : s->RChild;
-    r = p;
-    while (p != q)
+    // a denotes in which side of rebalancing point the insertion took place
+    int a = k < rebalancingPoint->key ? 1 : -1;
+    cursor = (a == 1) ? rebalancingPoint->LChild : rebalancingPoint->RChild;
+    AVL_Node *temp = cursor; // temp points to the insertion side child of rebalancing point
+
+    // updating the balance factor of nodes until cursor != cursorNext
+    while (cursor != cursorNext)
     {
-        if (k < p->key)
+        if (k < cursor->key)
         {
-            p->bf = 1;
-            p = p->LChild;
+            cursor->bf = 1;
+            cursor = cursor->LChild;
         }
-        else if (k > p->key)
+        else if (k > cursor->key)
         {
-            p->bf = -1;
-            p = p->RChild;
+            cursor->bf = -1;
+            cursor = cursor->RChild;
         }
     }
 
-    if (s->bf == 0)
+    // if balance factor of rebalancing point is 0
+    if (rebalancingPoint->bf == 0)
     {
-        s->bf = a;
+        rebalancingPoint->bf = a; //set the new balance factor in it
         return;
     }
-    else if (s->bf == -1 * a)
+    //if balance factor of rebalancing point is opposite to the new
+    // balance factor i.e., tree is more balanced now
+    else if (rebalancingPoint->bf == -1 * a)
     {
-        s->bf = 0;
+        rebalancingPoint->bf = 0;
         return;
     }
-    else
+    else // rebalancingPoint->bf == a
     {
-        // single rotation
-        if (r->bf == a)
+        // insertion is done on the same side of temp as that of rebalancing point
+        // so, single rotation is required
+        if (temp->bf == a)
         {
+            // insertion is done in the left side of rebalancing point
+            // and left side of temp
             if (a == 1)
-            {
-                p = r;
-                s->LChild = r->RChild;
-                r->RChild = s;
-                s->bf = 0;
-                r->bf = 0;
-            }
+                AVL_LL_Rotation(rebalancingPoint, temp, a);
+            // insertion is done in the right side of rebalancing point
+            // and right side of temp
             else if (a == -1)
-            {
-                p = r;
-                s->RChild = r->LChild;
-                r->LChild = s;
-                s->bf = 0;
-                r->bf = 0;
-            }
+                AVL_RR_Rotation(rebalancingPoint, temp, a);
         }
-
+        // insertion is done on the opposite side of temp as that of rebalancing point
         //double rotation
-        else if (r->bf == -1 * a)
+        else if (temp->bf == -1 * a)
         {
+            // insertion is done in the left side of rebalancing point
+            // and right side of temp
             if (a == 1)
-            {
-                p = r->RChild;
-                r->RChild = p->LChild;
-                p->LChild = r;
-                s->LChild = p->RChild;
-                p->RChild = s;
-                s->bf = (p->bf == 0) ? 0 : (p->bf == 1 ? -1 : 0);
-                r->bf = (p->bf == 0) ? 0 : (p->bf == 1 ? 0 : 1);
-                p->bf = 0;
-            }
+                AVL_LR_Rotation(rebalancingPoint, temp, a, "insertion");
+            // insertion is done in the right side of rebalancing point
+            // and left side of temp
             else if (a == -1)
-            {
-                p = r->LChild;
-                r->LChild = p->RChild;
-                p->RChild = r;
-                s->RChild = p->LChild;
-                p->LChild = s;
-                s->bf = p->bf == 0 ? 0 : (p->bf == 1 ? 0 : 1);
-                r->bf = p->bf == 0 ? 0 : (p->bf == 1 ? -1 : 0);
-                p->bf = 0;
-            }
+                AVL_RL_Rotation(rebalancingPoint, temp, a, "insertion");
         }
     }
 
-    if (s == t->RChild)
-        t->RChild = p;
+    if (rebalancingPoint == parent->RChild)
+        parent->RChild = cursor;
     else
-        t->LChild = p;
+        parent->LChild = cursor;
+}
+
+void AVL_Tree::AVL_RL_Rotation(AVL_Node *rebalancingPoint, AVL_Node *temp, int a, string operation)
+{
+    // first rotaion
+    AVL_Node *cursor = temp->LChild;
+    temp->LChild = cursor->RChild;
+    cursor->RChild = temp;
+
+    // second rotation
+    rebalancingPoint->RChild = cursor->LChild;
+    cursor->LChild = rebalancingPoint;
+
+    // update balance factor
+    if (operation.compare("insertion") == 0)
+    {
+        rebalancingPoint->bf = cursor->bf == 0 ? 0 : (cursor->bf == 1 ? 0 : 1);
+        temp->bf = cursor->bf == 0 ? 0 : (cursor->bf == 1 ? -1 : 0);
+    }
+    else if (operation.compare("deletion") == 0)
+    {
+        rebalancingPoint->bf = cursor->bf == 0 ? 0 : (cursor->bf == 1 ? 0 : 1);
+        temp->bf = cursor->bf == 0 ? 0 : (cursor->bf == 1 ? -1 : 0);
+    }
+    cursor->bf = 0;
+}
+
+void AVL_Tree::AVL_LR_Rotation(AVL_Node *rebalancingPoint, AVL_Node *temp, int a, string operation)
+{
+    // first rotation
+    AVL_Node *cursor = temp->RChild;
+    temp->RChild = cursor->LChild;
+    cursor->LChild = temp;
+
+    // second rotation
+    rebalancingPoint->LChild = cursor->RChild;
+    cursor->RChild = rebalancingPoint;
+
+    // update balance factor
+    if (operation.compare("insertion") == 0)
+    {
+        rebalancingPoint->bf = (cursor->bf == 0) ? 0 : (cursor->bf == 1 ? -1 : 0);
+        temp->bf = (cursor->bf == 0) ? 0 : (cursor->bf == 1 ? 0 : 1);
+    }
+    else if (operation.compare("deletion") == 0)
+    {
+        rebalancingPoint->bf = cursor->bf == 0 ? 0 : (cursor->bf == 1 ? -1 : 0);
+        temp->bf = cursor->bf == 0 ? 0 : (cursor->bf == 1 ? 0 : 1);
+    }
+    cursor->bf = 0;
+}
+
+void AVL_Tree::AVL_RR_Rotation(AVL_Node *rebalancingPoint, AVL_Node *temp, int a)
+{
+    // rotation
+    AVL_Node *cursor = temp;
+    rebalancingPoint->RChild = temp->LChild;
+    temp->LChild = rebalancingPoint;
+
+    // update balance factor
+    if (temp->bf == 0)
+    {
+        temp->bf = a;
+    }
+    else
+    {
+        rebalancingPoint->bf = 0;
+        temp->bf = 0;
+    }
+}
+
+void AVL_Tree::AVL_LL_Rotation(AVL_Node *rebalancingPoint, AVL_Node *temp, int a)
+{
+    // rotation
+    AVL_Node *cursor = temp;
+    rebalancingPoint->LChild = temp->RChild;
+    temp->RChild = rebalancingPoint;
+
+    // update balance factor
+    if (temp->bf == 0)
+    {
+        temp->bf = a;
+    }
+    else
+    {
+        rebalancingPoint->bf = 0;
+        temp->bf = 0;
+    }
 }
 
 void AVL_Tree::AVL_Delete(int k)
 {
-    stack<AVL_Node *> stack;
+    stack<AVL_Node *> stack; // store the nodes which comes in the path upto the deleted node
     stack.push(head);
-    try
+    AVL_Node *root = head->RChild; // root is the root of the tree which is right child of head node
+    AVL_Node *curr = root;         // curr used for path traversal
+    AVL_Node *prev = head;         //prev points to prev of curr
+
+    // finding the node with key = k
+    while (curr != nullptr && curr->key != k)
     {
-        AVL_Node *root = head->RChild;
-        AVL_Node *curr = root, *par = head;
-        while (curr != nullptr && curr->key != k)
-        {
-            par = curr;
-            stack.push(par);
-            if (curr->key < k)
-                curr = curr->RChild;
-            else if (curr->key > k)
-                curr = curr->LChild;
-        }
+        prev = curr;             // updating prev
+        stack.push(prev);        // pushing curr into stack
+        if (curr->key < k)       // if curr->key is smaller than k
+            curr = curr->RChild; // update curr to right child of curr
+        else if (curr->key > k)  // if curr->key is greater than k
+            curr = curr->LChild; // update curr to right child of curr
+    }
 
-        // k doesn't exists
-        if (curr == nullptr)
-            throw k;
+    // k doesn't exists
+    if (curr == nullptr)
+        throw k;
 
-        // leaf node deletion
-        if (curr->LChild == nullptr && curr->RChild == nullptr)
-        {
-            if (par == head)
-                head->RChild = curr->RChild;
-            else if (curr->key < par->key)
-                par->LChild = nullptr;
-            else
-                par->RChild = nullptr;
-            // free(curr);
-        }
-        // node with single child deletion
-        else if (curr->LChild == nullptr || curr->RChild == nullptr)
-        {
-            AVL_Node *temp;
-            if (curr->LChild == nullptr)
-                temp = curr->RChild;
-            else
-                temp = curr->LChild;
-
-            // if deleted node is root node itself with one child
-            if (par == head)
-                head->RChild = temp;
-            else if (curr->key > par->key)
-                par->RChild = temp;
-            else
-                par->LChild = temp;
-            // free(curr);
-        }
-        // node with double child deletion
-        else
-        {
-            AVL_Node *prev = nullptr, *temp;
+    // leaf node deletion i.e., k is present in the leaf node
+    if (curr->LChild == nullptr && curr->RChild == nullptr)
+    {
+        if (prev == head) // if deleted node is root node itself with one child
+            head->RChild = curr->RChild;
+        else if (curr->key < prev->key) // if node to be deleted is left child of prev
+            prev->LChild = nullptr;
+        else // otherwise
+            prev->RChild = nullptr;
+        // free(curr);
+    }
+    // node with single child deletion i.e., k has one child
+    else if (curr->LChild == nullptr || curr->RChild == nullptr)
+    {
+        AVL_Node *temp;
+        // if curr has no left child
+        if (curr->LChild == nullptr)
             temp = curr->RChild;
-            stack.push(curr);
-            // inorder successor
-            while (temp->LChild != nullptr)
-            {
-                stack.push(temp);
-                prev = temp;
-                temp = temp->LChild;
-            }
+        else // otherwise
+            temp = curr->LChild;
 
-            if (prev != nullptr)
-                prev->LChild = temp->RChild;
-            else
-                curr->RChild = temp->RChild;
-            curr->key = temp->key;
-            k = temp->key;
-            // free(temp);
-        }
+        if (prev == head) // if deleted node is root node itself with one child
+            head->RChild = temp;
+        else if (curr->key > prev->key) // if the node to be deleted is right child of prev
+            prev->RChild = temp;
+        else // if the node to be deleted is left child of prev
+            prev->LChild = temp;
+        // free(curr);
     }
-    catch (int x)
+    // node with double child deletion i.e., k has two children
+    else
     {
-        cout << x << " is not present in the tree.";
-        return;
+        AVL_Node *temp;                // temp is used for traversal to find out inorder successor of curr
+        AVL_Node *parOfTemp = nullptr; // parOfTemp points to parent of temp
+        temp = curr->RChild;
+        stack.push(curr);
+
+        // finding inorder successor of curr
+        while (temp->LChild != nullptr)
+        {
+            stack.push(temp);
+            parOfTemp = temp;
+            temp = temp->LChild;
+        }
+
+        // if the right child of curr is itself the
+        // inorder successor of curr
+        if (parOfTemp == nullptr)
+            curr->RChild = temp->RChild;
+        else
+            parOfTemp->LChild = temp->RChild;
+        curr->key = temp->key; // copying the key value
+        k = temp->key;
+        // free(temp);
     }
 
-    AVL_Node *s, *t, *r, *p;
+    // rebalancingPoint points to node where rebalancing may be necessary
+    // parent points to parent of rebalancingPoint
+    // cursor is used for traversal
+    // temp point to the child of cursor
+    AVL_Node *rebalancingPoint, *parent;
+    AVL_Node *temp, *cursor;
+
     while (stack.top() != head)
     {
-        s = stack.top();
-        int a = k < s->key ? 1 : -1;
+        rebalancingPoint = stack.top();
+        int a = k < rebalancingPoint->key ? 1 : -1; // a denotes in which side of rebalancing point the deletion took place
         stack.pop();
-        t = stack.top();
+        parent = stack.top();
 
-        if (s->bf == a)
+        if (rebalancingPoint->bf == a) //if balance factor of rebalancingPoint is same as new balance factor
         {
-            s->bf = 0;
+            rebalancingPoint->bf = 0;
             continue;
         }
-        else if (s->bf == 0)
+        // if balance factor of rebalancing point is 0
+        else if (rebalancingPoint->bf == 0)
         {
-            s->bf = -1 * a;
+            rebalancingPoint->bf = -1 * a;
             return;
         }
+        //if (rebalancingPoint->bF == -1*a) i.e., if balance factor of rebalancingPoint is opposite of a
         else
         {
-            r = s->bf == 1 ? s->LChild : s->RChild;
-            //single rotation
-            if (r->bf == -1 * a)
+            temp = rebalancingPoint->bf == 1 ? rebalancingPoint->LChild : rebalancingPoint->RChild;
+            //single rotation when temp has one child
+            if (temp->bf == -1 * a)
             {
+                cursor = temp;
                 if (a == -1)
-                {
-                    p = r;
-                    s->LChild = r->RChild;
-                    r->RChild = s;
-                    s->bf = 0;
-                    r->bf = 0;
-                }
+                    AVL_LL_Rotation(rebalancingPoint, temp, a);
                 else if (a == 1)
-                {
-                    p = r;
-                    s->RChild = r->LChild;
-                    r->LChild = s;
-                    s->bf = 0;
-                    r->bf = 0;
-                }
+                    AVL_RR_Rotation(rebalancingPoint, temp, a);
             }
-            //single rotation
-            else if (r->bf == 0)
+            //single rotation when temp has two children
+            else if (temp->bf == 0)
             {
+                cursor = temp;
                 if (a == -1)
-                {
-                    p = r;
-                    s->LChild = r->RChild;
-                    r->RChild = s;
-                    r->bf = a;
-                }
+                    AVL_LL_Rotation(rebalancingPoint, temp, a);
                 else if (a == 1)
-                {
-                    p = r;
-                    s->RChild = r->LChild;
-                    r->LChild = s;
-                    r->bf = a;
-                }
+                    AVL_RR_Rotation(rebalancingPoint, temp, a);
             }
             //double rotation
-            else if (r->bf == a)
+            else if (temp->bf == a)
             {
                 if (a == -1)
                 {
-                    p = r->RChild;
-                    r->RChild = p->LChild;
-                    p->LChild = r;
-                    s->LChild = p->RChild;
-                    p->RChild = s;
-                    s->bf = p->bf == 0 ? 0 : (p->bf == 1 ? -1 : 0);
-                    r->bf = p->bf == 0 ? 0 : (p->bf == 1 ? 0 : 1);
-                    p->bf = 0;
+                    cursor = temp->RChild;
+                    AVL_LR_Rotation(rebalancingPoint, temp, a, "deletion");
                 }
                 else if (a == 1)
                 {
-                    p = r->LChild;
-                    r->LChild = p->RChild;
-                    p->RChild = r;
-                    s->RChild = p->LChild;
-                    p->LChild = s;
-                    s->bf = p->bf == 0 ? 0 : (p->bf == 1 ? 0 : 1);
-                    r->bf = p->bf == 0 ? 0 : (p->bf == 1 ? -1 : 0);
-                    p->bf = 0;
+                    cursor = temp->LChild;
+                    AVL_RL_Rotation(rebalancingPoint, temp, a, "deletion");
                 }
             }
+
+            // No further rotations required if the balance factor has not changed for the subtree
+            if (cursor->bf == 1 || cursor->bf == -1)
+            {
+                if (rebalancingPoint == parent->RChild)
+                    parent->RChild = cursor;
+                else
+                    parent->LChild = cursor;
+                return;
+            }
         }
-        if (s == t->RChild)
-            t->RChild = p;
+
+        if (rebalancingPoint == parent->RChild)
+            parent->RChild = cursor;
         else
-            t->LChild = p;
+            parent->LChild = cursor;
     }
 }
 
 bool AVL_Tree::AVL_Search(int k)
 {
-    AVL_Node *root = head->RChild;
-    if (root == nullptr)
+    AVL_Node *temp = head->RChild; // temp points to root of the tree which is the right child of head node
+    if (temp == nullptr)           // if tree is empty
         return false;
 
-    while (root != nullptr)
+    // iterate until temp becomes null i.e., temp reaches leaf node
+    while (temp != nullptr)
     {
-        if (root->key == k)
+        if (temp->key == k) // if k is found
             return true;
-        else if (root->key < k)
-            root = root->RChild;
-        else
-            root = root->LChild;
+        else if (temp->key < k) // if k is greater than key of root
+            temp = temp->RChild;
+        else // if k is smaller than key of root
+            temp = temp->LChild;
     }
-    return false;
+    return false; // if k is not present in the tree
 }
 
 void AVL_Tree::AVL_Print(const char *filename)
@@ -393,8 +461,7 @@ void AVL_Tree::AVL_Print(const char *filename)
     stream << "\tnode" << INT_MAX << "[label = \"<l> | <d> Head Node | <r> \"];\n";
 
     AVL_Node *root = head->RChild; // curr points to left child of dummy node i.e., root of actual TBST
-    // when tree is empty
-    if (root == nullptr)
+    if (root == nullptr)           // when tree is empty
         cout << "Tree is empty" << endl;
     else
     {
@@ -437,15 +504,13 @@ void AVL_Tree::AVL_Print(const char *filename)
             q.pop();
         }
         stream << nodeString;
-        // stream << "\t\"node" << root->key << "\":l -> \"node" << root->leftChild->data << "\":d;\n";
         stream << "\t\"node" << head->key << "\":r -> \"node" << head->RChild->key << "\":d;\n";
         stream << pointerString;
     }
-
-    // writing nodes details and pointer details on graph.gv
     stream << "}";
     stream.close();
 
+    // generate tree image
     string cmd = "dot.exe -Tpng graph.gv -o " + string(filename) + ".png";
     system((const char *)cmd.c_str());
 }
@@ -453,49 +518,93 @@ void AVL_Tree::AVL_Print(const char *filename)
 int main()
 {
     AVL_Tree tree;
-    tree.AVL_Insert(20);
-    //tree.AVL_Print();
-    tree.AVL_Insert(10);
-    //tree.AVL_Print();
-    tree.AVL_Insert(30);
-    //tree.AVL_Print();
-    tree.AVL_Insert(3);
-    //tree.AVL_Print();
-    tree.AVL_Insert(15);
-    //tree.AVL_Print();
-    tree.AVL_Insert(25);
-    //tree.AVL_Print();
-    tree.AVL_Insert(40);
-    tree.AVL_Insert(35);
-    //tree.AVL_Print();
-    // tree.AVL_Insert(11);
-    //tree.AVL_Print();
-    tree.AVL_Insert(17);
-    //tree.AVL_Print();
-    // tree.AVL_Insert(35);
-    // tree.AVL_Print();
-    // tree.AVL_Delete(15);
-    // tree.AVL_Print();
-    // tree.AVL_Delete(30);
-    // tree.AVL_Print();
-    // tree.AVL_Delete(15);
-    // tree.AVL_Print();
-    // tree.AVL_Delete(20);
-    // tree.AVL_Print();
-    // tree.AVL_Delete(30);
-    // tree.AVL_Delete(20);
-    // tree.AVL_Print();
-    // tree.AVL_Delete(40);
-    // tree.AVL_Print();
-    // tree.AVL_Delete(20);
-    // tree.AVL_Print();
-    // tree.AVL_Delete(28);
-    // tree.AVL_Print();
-    // tree.AVL_Delete(5);
-    // tree.AVL_Print();
-    // cout << tree.AVL_Search(100) << endl;
     string filename;
-    cout << "Enter file name: ";
-    cin >> filename;
-    tree.AVL_Print(filename.c_str());
+    bool iteration = true;
+    while (iteration)
+    {
+        int choice = 0;
+        cout << "\n---------------------------------------";
+        cout << "\n\tAVL Tree Implementation";
+        cout << "\n---------------------------------------";
+        cout << "\nWhat do you want to perform?";
+        cout << "\n1. Insertion";
+        cout << "\n2. Deletion";
+        cout << "\n3. Search";
+        cout << "\n4. Print tree";
+        cout << "\n5. Quit";
+        cout << "\nEnter your choice: ";
+        cin >> choice;
+        int userData;
+
+        switch (choice)
+        {
+        // Insertion operation
+        case 1:
+            cout << "\nEnter the number: ";
+            cin >> userData;
+            if (floor(userData) == userData) // checking whether the input data is a number or not
+            {
+                tree.AVL_Insert(userData);
+                cout << "\nInsertion done successfully.";
+            }
+            else
+                cout << "\n Enter a valid integer!!";
+            break;
+
+        // Deletion operation
+        case 2:
+            try
+            {
+                cout << "\nEnter the number: ";
+                cin >> userData;
+                if (floor(userData) == userData) // checking whether the input data is a number or not
+                {
+                    tree.AVL_Delete(userData);
+                    cout << "\nDeletion done successfully";
+                }
+                else
+                    cout << "\n Enter a valid integer!!";
+            }
+            catch (int x)
+            {
+                cout << x << " is not present in the tree.";
+            }
+            break;
+        // Search operation
+        case 3:
+            cout << "\nEnter the number: ";
+            cin >> userData;
+            if (floor(userData) == userData) // checking whether the input data is a number or not
+            {
+                try
+                {
+                    if (tree.AVL_Search(userData))
+                        cout << "\nElement " << userData << " is present in the tree ";
+                    else
+                        throw userData;
+                }
+                catch (int x)
+                {
+                    cout << "\nElement " << userData << " is not present in the tree ";
+                }
+            }
+            else
+                cout << "\n Enter a valid integer!!";
+            break;
+        // Print the tree
+        case 4:
+            cout << "Enter a file name: ";
+            cin >> filename;
+            tree.AVL_Print(filename.c_str());
+            cout << filename << ".png has been generated!\n";
+            break;
+        // Quit
+        case 5:
+            iteration = false;
+            break;
+        default:
+            cout << "\nInvalid Choice";
+        }
+    }
+    return 0;
 }
