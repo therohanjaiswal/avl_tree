@@ -1,0 +1,297 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{ {./images/} }
+\usepackage{enumitem}
+\renewcommand{\thesection}{\Roman{section}} 
+\usepackage{setspace}
+\usepackage[affil-it]{authblk}
+\usepackage[left=3cm, right=3cm, top=3cm, bottom=3cm]{geometry}
+\usepackage{multicol}
+\usepackage{listings}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage{algpseudocode,amsthm}
+\usepackage{calrsfs}
+\DeclareMathAlphabet{\pazocal}{OMS}{zplm}{m}{n}
+% \setlength{\columnsep}{-4cm}
+% \usepackage{tikz-qtree}
+\usepackage[hidelinks]{hyperref}
+
+\title{AVL Tree Assignment}
+\author{Rohan Jaiswal}
+\affil{M.Tech CSE 214101042}
+\date{}
+\setcounter{tocdepth}{3}
+\begin{document}
+\newpage
+\pagenumbering{arabic}
+\maketitle
+
+\section{Introduction}
+The program implements an AVL Tree in which insertion, deletion, search and print operations can be performed. This tree initially contains a head pointer which points to the dummy node which contains INT\_MAX and it’s left child is null and the right child points to the root of the AVL tree. 
+\section{Structure of the AVL\_Node}
+Each node contains following variables:
+\begin{enumerate} [label=\roman*]
+    \item \textbf{int key - }contains the input data value.
+    \item \textbf{int bf - }contains the balance factor of the node (\textbf{\textit{height of left subtree - height of right subtree}}).
+     \item \textbf{AVL\_Node * LChild - } contains the pointer to the left child.
+     \item \textbf{AVL\_Node * RChild - } contains the pointer to the right child.
+\end{enumerate}
+\section{Functions Implemented}
+\begin{enumerate}
+    \item \textbf{void AVL\_Insert(int k)}\newline 
+    This function performs the insertion of a new node with key "k" to the AVL Tree. The logic of the function is majorly divided into 3 steps.\newline\newline
+        \textbf{1. Finding the insertion point and attaching the new node}\newline
+        In case of first insertion, the new node is made as the right child of the dummy node and makes it root of the tree, otherwise it iterates from root upto leaf node to find the correct insertion point. While traversal we maintain 4 pointers namely, \newline
+        \textbf{rebalancingPoint - } pointer pointing to node where rebalancing may be necessary.\newline 
+        \textbf{parent - } ponting to parent of rebalancingPoint.\newline
+        \textbf{cursor - } pointer iterate from root to leaf. \newline
+        \textbf{cursorNext - } pointer pointing to left child of cursor if k is less than value of cursor or right child if k is greater than the value of cursor. \newline 
+        While traversing we check whether cursorNext is null or not. If cursorNext is null, then the new node is inserted there itself, otherwise if balance factor of cursorNext if non zero then we shift the parent to cursor and rebalancingPoint to cursorNext and finally shift cursor to cursorNext. If the key to be inserted is already present in the tree then it throws an exception.\newline\newline
+        \textbf{2. Updating the balance factor}\newline
+        After placing the node at correct position, we make a variable \textbf{a} which denotes whether the insertion happened to the right of rebalancingPoint or left of rebalancingPoint. a = 1 if the insertion is performed to the left of rebalancingPoint and a = -1, if the insertion is performed to the right of rebalanngPoint. Now with the help of cursor, we update the balance point of all the nodes from rebalancingPoint to newly inserted node. If the insertion is performed to the left of cursor then balance factor is updated t to 1, otherwise -1.\newline \newline
+        \textbf{3. Checking for imbalance}\newline
+        Now, based on the balance factor of rebalancingPoint we check whether rotation is required or not. 
+        Following cases can arise after attaching new node to the tree:
+        \begin{enumerate} [label=\roman*]
+            \item \textbf{rebalancingPoint-$>$bf == 0}\newline
+            It means before insertion the balance factor of node pointed by rebalancingPoint was zero i.e., it was already balanced. So after insertion, it’s balance factor is updated to a.
+            \item \textbf{rebalancingPoint-$>$bf == -1 * a}\newline
+            It means that the node pointed by rebalancingPoint has one child already and the new node is inserted to the opposite side. So after insertion, it’s balance factor is updated to zero.
+            \textbf{rebalancingPoint-$>$bf == a}\newline
+            It means that the node pointed by rebalancingPoint has a non-zero balance factor i.e., it was having a longer subtree on one side and insertion happened on the same side. In this case imbalance can occurs at rebalancingPoint.\textbf{temp} is a pointer pointing to left child of rebalancingPoint if insertion happened to the left of rebalancingPoint otherwise it points to right child. These cases may arise
+            \begin{enumerate} [label=\roman*]
+                \item \textbf{temp-$>$bf == a}\newline
+                It means that insertion is done one the same side of rebalancingPoint and temp. \newline
+                Now if a =1, then it means insertion is done on the left of rebalancingPoint and left of temp. So, now LL rotation is performed. \newline 
+                If a = -1, then it means insertion is done on the right of rebalancingPoint and right of temp.So, RR rotation is performed.
+                \item \textbf{temp-$>$bf == -1*a} \newline
+                It means that insertion is done on the opposite sides of rebalancingPoint and temp.\newline
+		        Now if a = 1, then it means insertion is done on the left of rebalancingPoint and right of temp. So, now LR rotation is performed. \newline
+		        If a = -1, then insertion is done on the right of rebalancingPoint and left of temp. So, now RL rotation is performed.
+            \end{enumerate}
+        \end{enumerate}
+    Time Complexity : O(h), where h = height of the tree.
+    \item \textbf{void AVL\_Delete(int k)} \newline
+    This function performs the deletion of a node with key "k" from the tree. The logic of the function is majorly divied 3 steps. \newline \newline
+    \textbf{1. Finding the node with key "k"}\newline
+    We have to traverse from the root to the node with key "k". For that we maintain two pointers and one stack namely, \newline
+    \textbf{current - } pointer acting as an iterator.\newline
+    \textbf{prev - } pointer pointing to parent of current.\newline
+    \textbf{stack - } stack to push all the nodes which is encountered during traversal. \newline
+    In the end of the traversal, if there is no node with key "k", the function throws an exception.\newline \newline
+    \textbf{2. Deleting the node}\newline
+    Here, one of the 3 cases may arise:
+    \begin{enumerate}[label=\roman*]
+        \item \textbf{Deleted Node is a leaf node :} In this case, we simply delete the node and set the child pointer of prev to null.
+        \item \textbf{Deleted node is a node with single child : } In this case, we maintain a \textbf{temp} pointer pointing to the child of current and delete the node. Then we simply point make temp as the child of prev.
+        \item \textbf{Deleted Node is a node with two child : }\newline
+        In this case, we find out the inorder successor of node and replace the key of node to be deleted with the key of inorder successor and then delete the successor node. 
+    \end{enumerate}
+    \textbf{3. Updating the balance factor}\newline
+    Here, we make three pointer namely, \newline 
+    \textbf{rebalancingPoint - } pointer pointing to node where rebalancing may be necessary.\newline 
+    \textbf{parent - } ponting to parent of rebalancingPoint.\newline
+    \textbf{cursor - } pointer to iterate. \newline
+    Now we pop the nodes from stack and update the balance factor of all the nodes with the help of a variable \textbf{a} which denotes on which side of rebalancingPoint the deletion is performed. a = 1, if the deletion is performed on the left of rebalancingPoint and a = -1, if the deletion is performed on the right. Following cases may arise after deleting the node.
+    \begin{enumerate} [label=\roman*]
+            \item \textbf{rebalancingPoint-$>$bf == a}\newline
+            It this case,the balance factor of rebalancingPoint is set to zero and continue popping.
+            \item \textbf{rebalancingPoint-$>$bf == 0}\newline
+            In this case,the balance factor of rebalancingPoint is set to -1 * a.
+            \item \textbf{rebalancingPoint-$>$bf == -1 * a}\newline
+            In this case, rotation is required. For that we maintain a pointer \textbf{temp} pointing to left child of rebalancingPont.
+            These cases may arise
+            \begin{enumerate} [label=\roman*]
+                \item \textbf{temp-$>$bf == -1 * a}\newline
+                Now, if a = -1, LL rotation is performed. \newline
+                If a = 1, then RR rotation is performed. 
+                \item \textbf{temp-$>$bf == 0} \newline
+                Now, if a = -1, LL rotation is performed. \newline
+                If a = 1, then RR rotation is performed. 
+                \item \textbf{temp-$>$bf == a} \newline
+                Now, if a = -1, LR rotation is performed. \newline
+                If a = 1, then RL rotation is performed. \newline
+            \end{enumerate}
+    \end{enumerate}
+    Time Complexity : O(h), where h = height of the tree.
+    \item \textbf{bool AVL\_Search(int k)}\newline
+    This function searches the node with key "k" in the tree. If the tree is empty, it returns false. It used an iterator \textbf{current} to iterate from root node to leaf node.If k is greater than current node value then it goes to left subtree of current node otherwise it goes to the right subtree of current node. If k is found during iteration, it returns true otherwise it returns false.\newline\newline
+    Time Complexity : O(h), where h = height of the tree.
+    \item \textbf{void AVL\_Print(const char *filename)} \newline
+    This function performs the level order traversal of the tree and generate a graph.gv file which consists the details of nodes and their child pointers. It asks the user a filename for generating the image of tree with the same filename.\newline \newline
+    Time Complexity : O(n), where n = total number of nodes in the tree.
+\end{enumerate}
+\section{Utility Functions Implemented}
+    \begin{enumerate}
+        \item \textbf{void AVL\_RR\_Rotation(AVL\_Node *rebalancingPoint, AVL\_Node *temp, int a)}\newline
+       This function performs RR rotation. In this function rebalancingPoint pointer points to imblalanced node, temp point to the right child of imbalanced node, "a" represents that there is RR imbalance. Here, the left child of temp is made as the right child of rebalancingPoint and rebalancingPoint is made as the left child of temp and then the balance factor are updated accordingly. 
+        \item \textbf{void AVL\_LL\_Rotation(AVL\_Node *rebalancingPoint, AVL\_Node *temp, int a)}\newline
+        This function performs LL rotation. In this function rebalancingPoint pointer points to imblalanced node, temp point to the left child of imbalanced node, "a" represents that there is LL imbalance. Here, the right child of temp is made as the left child of rebalancingPoint and rebalancingPoint as the right child of temp and then the balancing factor is updated accordingly.
+        \item \textbf{void AVL\_LR\_Rotation(AVL\_Node *rebalancingPoint, AVL\_Node *temp, int a, string operation)}\newline
+        This function performs LR rotation. In this function rebalancingPoint pointer points to imblalanced node, temp point to the left child of imbalanced node, "a" represents that there is LR imbalance and operation represents what kind of operation(insertion or deletion) invoked this function. LR rotation involves two rotations. In the first rotation, a new pointer cursor points to right child of temp, left child of cursor is made as right child of temp and temp is made as left child of cursor. In the second rotation, right child of cursor is made as left child of rebalancingPoint and rebalancingPoint is made as right child of cursor and based on the operation it updates the balance factor of the node pointed by rebalancingPoint and the node pointed by temp.
+        \item \textbf{void AVL\_RL\_Rotation(AVL\_Node *rebalancingPoint, AVL\_Node *temp, int a, string operation)}\newline
+        This function performs RL rotation. In this function rebalancingPoint pointer points to imblalanced node, temp point to the right child of imbalanced node, "a" represents that there is RL imbalance and operation represents what kind of operation(insertion or deletion) invoked this function. RL rotation involves two rotations. In the first rotation, a new pointer cursor points to left child of temp, the right child of cursor is made as left child of temp and temp is made as right child of cursor. In the second rotation, left child of cursor is made as right child of rebalancingPoint and rebalancingPoint is made as left child of cursor and based on the operation it updates the balance factor of the node pointed by rebalancingPoint and the node pointed by temp.
+    \end{enumerate}
+\section{Test cases}
+    \begin{enumerate}
+        \item \textbf{Insertion} \newline
+        \textbf{1.1. First Insertion} \newline\newline \newline
+        Initial empty tree with head node\newline\newline \newline\newline \newline
+            \includegraphics{a.png} \newline\newline\newline
+        Inserting first node with 40 \newline \newline\newline\newline \newline
+            \includegraphics{b.png} \newline
+        \newpage
+        
+        \textbf{1.2. Insertion with LL rotation} \newline
+        Before inserting 20 \newline \newline
+            \includegraphics[width=8cm, height=8cm]{c.png} \newline 
+        Removing LL imbalance at 40 after inserting 20 \newline\newline
+            \includegraphics[width=10cm, height=8cm]{d.png} \newline 
+        \newpage
+        
+        \textbf{1.3. Insertion with RR rotation} \newline
+        Before inserting 60 \newline \newline
+            \includegraphics{e.png} \newline 
+        Removing RR imbalance at 40 after inserting 60 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{f.png} \newline \newline 
+            
+        \textbf{1.4. Insertion with RL rotation} \newline
+        Before inserting 90 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{g.png} \newline 
+        Removing RL imbalance occurring at 60 after inserting 90 \newline \newline
+            \includegraphics[width=15cm, height=8cm]{h.png} \newline
+            \newline
+        \newpage
+        
+        \textbf{1.5. Insertion with LR rotation} \newline
+        Before inserting 58 \newline \newline
+            \includegraphics[width=15cm, height=8cm]{i.png} \newline 
+        Removing LR imbalance at 60 after inserting 58 \newline \newline
+            \includegraphics[width=15cm, height=8cm]{j.png} 
+        \newpage
+        
+        \textbf{1.6. Insertion of already existing key} \newline
+        Before inserting 50 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{zj.png} \newline 
+        After inserting 50 which is alerady present in the tree \newline \newline
+            \includegraphics[width=12cm, height=8cm]{zl.png} 
+        \newpage
+        
+        \item \textbf{Deletion} \newline
+        \textbf{2.1. Deletion without rotation}
+        \newline
+        Before deleting 80 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{k.png} \newline 
+        After deleting 80 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{l.png}\newpage
+         \textbf{2.1. Leaf Node Deletion} \newline
+         
+        \textbf{2.1.1 Leaf deletion with LL rotation}\newline
+        Before deleting 60 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{m.png} \newline 
+        Removing LL imbalance at 50 after deleting 60 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{n.png}\newline \newpage
+            
+        \textbf{2.1.2 Leaf deletion with RR rotation}\newline
+        Before deleting 30 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{o.png} \newline 
+        Removing RR imbalance at 40 After deleting 30 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{p.png}\newline
+            \newpage
+            
+        \textbf{2.1.3 Leaf deletion with RL rotation}\newline
+        Before deleting 50 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{q.png} \newline 
+        Removing RL imbalance at 60 After deleting 50 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{r.png}\newline
+            \newpage
+            
+        \textbf{2.1.4 Leaf deletion with LR rotation}\newline
+        Before deleting 70 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{s.png} \newline 
+        Removing LR imblance at 65 after deleting 70 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{t.png} 
+        \newpage
+        
+        \textbf{2.2. Node with single child Deletion} \newline
+        \textbf{2.2.1 Deletion with LL rotation}\newline
+        Before deleting 110 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{u.png} \newline 
+        Removing LL imbalance at 90 after deleting 110 \newline\newline
+            \includegraphics[width=12cm, height=8cm]{v.png}\newline
+        \newpage
+        
+        \textbf{2.2.2 Deletion with RR rotation}\newline
+        Before deleting 30 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{w.png} \newline 
+        Removing RR imbalance at 50 after deleting 30 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{x.png}\newline
+        \newpage
+        
+        \textbf{2.2.3 Deletion with RL rotation}\newline
+        Before deleting 30 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{y.png} \newline 
+        Removing RL imbalance at 50 after deleting 30 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{z.png}\newline
+        \newpage
+        
+        \textbf{2.2.4 Deletion with LR rotation}\newline
+        Before deleting 80 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{za.png} \newline 
+        Removing LR imbalance at 70 after deleting 80 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{zb.png}
+        \newpage
+        
+        \textbf{2.3. Node with two children Deletion} \newline
+        \textbf{2.3.1 Deletion with LL rotation}\newline
+        Before deleting 50 \newline \newline
+            \includegraphics[width=15cm, height=8cm]{zc.png} \newline 
+        Removing LL imbalance at 55 after deleting 50 \newline\newline
+            \includegraphics[width=15cm, height=8cm]{zd.png}\newline
+        \newpage
+        
+        \textbf{2.3.2 Deletion with RR rotation}\newline
+        Before deleting 90 \newline \newline
+            \includegraphics[width=15cm, height=8cm]{ze.png} \newline 
+        Removing RR imbalance at 70 after deleting 90 \newline \newline
+            \includegraphics[width=15cm, height=8cm]{zf.png}\newline
+        \newpage
+        
+        \textbf{2.3.3 Deletion with RL rotation}\newline
+        Before deleting 98 \newline \newline
+            \includegraphics[width=15cm, height=8cm]{zg.png} \newline 
+        Removing RL imbalance at 100 after deleting 98 \newline \newline
+            \includegraphics[width=15cm, height=8cm]{zh.png}\newline
+        \newpage
+        
+        \textbf{2.3.4 Deletion with LR rotation}\newline
+        Before deleting 60 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{zi.png} \newline 
+        Removing LR imbalance at 70 after deleting 60 \newline \newline
+            \includegraphics[width=12cm, height=8cm]{zj.png}
+        \newpage
+        
+        \textbf{2.4 Deletion with key not found}\newline
+        Initial tree \newline \newline
+            \includegraphics[width=12cm, height=8cm]{zj.png}\newline
+        Deleting 100 which is not present\newline\newline
+            \includegraphics[width=12cm, height=8cm]{zk.png}\newline
+        \newpage
+        
+        \item \textbf{Search}\newline
+        \textbf{3.1 Search when key already present} \newline
+        Initial tree \newline \newline
+             \includegraphics[width=12cm, height=8cm]{zj.png}\newline
+        Searching 80 which is present \newline\newline
+            \includegraphics[width=12cm, height=8cm]{zm.png}\newline
+        \newpage
+        \textbf{3.2 Search when key not present} \newline
+        Initial tree\newline \newline
+             \includegraphics[width=12cm, height=8cm]{zj.png}\newline
+        Searching 10 which is not present \newline\newline
+            \includegraphics[width=12cm, height=8cm]{zn.png}\newline
+        \newpage
+    \end{enumerate}
+\end{document}

@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <bits/stdc++.h>
+#include <unordered_map>
 #include <fstream>
 #include <cmath>
 
@@ -35,12 +36,23 @@ private:
     void AVL_LL_Rotation(AVL_Node *, AVL_Node *, int);
     void AVL_LR_Rotation(AVL_Node *, AVL_Node *, int, string);
     void AVL_RL_Rotation(AVL_Node *, AVL_Node *, int, string);
+    AVL_Node *copyTree(AVL_Node *, unordered_map<AVL_Node *, AVL_Node *> &);
 
 public:
     AVL_Tree()
     {
         head = new AVL_Node(INT_MAX);
     }
+
+    //copy constructor
+    AVL_Tree(const AVL_Tree &tree)
+    {
+        if (tree.head->RChild == nullptr) //if tree is empty store null
+            head->RChild = nullptr;
+        unordered_map<AVL_Node *, AVL_Node *> map;       // hashmap to map the nodes of two trees
+        head->RChild = copyTree(tree.head->RChild, map); //invoke the copyTree function
+    }
+
     void AVL_Insert(int);
     void AVL_Delete(int);
     bool AVL_Search(int);
@@ -50,6 +62,17 @@ public:
         delete head;
     }
 };
+
+AVL_Node *AVL_Tree ::copyTree(AVL_Node *root, unordered_map<AVL_Node *, AVL_Node *> &map)
+{
+    AVL_Node *newNode = new AVL_Node(root->key);       // new node with same data as root
+    map[root] = newNode;                               // store it in map
+    if (root->LChild != nullptr)                       // if root has left child
+        newNode->LChild = copyTree(root->LChild, map); // invoke recursion on left child
+    if (root->RChild != nullptr)                       // if root has right child
+        newNode->RChild = copyTree(root->RChild, map); // invoke recursion on right child
+    return newNode;
+}
 
 void AVL_Tree::AVL_Insert(int k)
 {
@@ -514,7 +537,7 @@ void AVL_Tree::AVL_Print(const char *filename)
     stream.close();
 
     // generate tree image
-    string cmd = "dot.exe -Tpng graph.gv -o " + string(filename) + ".png";
+    string cmd = "dot -Tpng graph.gv -o " + string(filename) + ".png";
     system((const char *)cmd.c_str());
 }
 
