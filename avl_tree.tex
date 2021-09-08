@@ -75,10 +75,10 @@ Each node contains following variables:
     Time Complexity : O(h), where h = height of the tree.
     \item \textbf{void AVL\_Delete(int k)} \newline
     This function performs the deletion of a node with key "k" from the tree. The logic of the function is majorly divied 3 steps. \newline \newline
-    \textbf{1. Finding the node with key "k"}\newline
-    We have to traverse from the root to the node with key "k". For that we maintain two pointers and one stack namely, \newline
-    \textbf{current - } pointer acting as an iterator.\newline
-    \textbf{prev - } pointer pointing to parent of current.\newline
+        \textbf{1. Finding the node with key "k"}\newline
+        We have to traverse from the root to the node with key "k". For that we maintain two pointers and one stack namely, \newline
+        \textbf{current - } pointer acting as an iterator.\newline
+        \textbf{prev - } pointer pointing to parent of current.\newline
     \textbf{stack - } stack to push all the nodes which is encountered during traversal. \newline
     In the end of the traversal, if there is no node with key "k", the function throws an exception.\newline \newline
     \textbf{2. Deleting the node}\newline
