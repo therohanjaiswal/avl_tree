@@ -6,6 +6,7 @@
 #include <bits/stdc++.h>
 #include <fstream>
 #include <cmath>
+
 using namespace std;
 
 class AVL_Node
@@ -71,54 +72,49 @@ void AVL_Tree::AVL_Insert(int k)
 
     while (true)
     {
-        try
+        if (k < cursor->key) // if k is smaller than cursor->key
         {
-            if (k < cursor->key) // if k is smaller than cursor->key
+            cursorNext = cursor->LChild;
+            if (cursorNext == nullptr) // if cursor reached the leaf node
             {
-                cursorNext = cursor->LChild;
-                if (cursorNext == nullptr) // if cursor reached the leaf node
-                {
-                    cursorNext = newNode;
-                    cursor->LChild = cursorNext; // make newNode as left child of cursor
-                    break;
-                }
-                else if (cursorNext->bf != 0) // if balance factor of cursorNext is non-zero
-                {
-                    parent = cursor;
-                    rebalancingPoint = cursorNext;
-                }
-                cursor = cursorNext;
+                cursorNext = newNode;
+                cursor->LChild = cursorNext; // make newNode as left child of cursor
+                break;
             }
-            else if (k > cursor->key) // if k is greater than cursor->key
+            else if (cursorNext->bf != 0) // if balance factor of cursorNext is non-zero
             {
-                cursorNext = cursor->RChild;
-                if (cursorNext == nullptr) // if cursor reached the leaf node
-                {
-                    cursorNext = newNode;
-                    cursor->RChild = cursorNext; // make newNode as right child of cursor
-                    break;
-                }
-                else if (cursorNext->bf != 0) // if balance factor of cursorNext is non-zero
-                {
-                    parent = cursor;
-                    rebalancingPoint = cursorNext;
-                }
-                cursor = cursorNext;
+                parent = cursor;
+                rebalancingPoint = cursorNext;
             }
-            else                    // if k already exists in the tree
-                throw newNode->key; // throw exception
+            cursor = cursorNext;
         }
-        catch (int x)
+        else if (k > cursor->key) // if k is greater than cursor->key
         {
-            cout << x << " is already present in the tree.";
-            return;
+            cursorNext = cursor->RChild;
+            if (cursorNext == nullptr) // if cursor reached the leaf node
+            {
+                cursorNext = newNode;
+                cursor->RChild = cursorNext; // make newNode as right child of cursor
+                break;
+            }
+            else if (cursorNext->bf != 0) // if balance factor of cursorNext is non-zero
+            {
+                parent = cursor;
+                rebalancingPoint = cursorNext;
+            }
+            cursor = cursorNext;
         }
+        else                    // if k already exists in the tree
+            throw newNode->key; // throw exception
     }
 
     // a denotes in which side of rebalancing point the insertion took place
     int a = k < rebalancingPoint->key ? 1 : -1;
     cursor = (a == 1) ? rebalancingPoint->LChild : rebalancingPoint->RChild;
-    AVL_Node *temp = cursor; // temp points to the insertion side child of rebalancing point
+    /* temp points to the insertion side child of rebalancing point
+        i.e., if insertion happened on left side then temp point to left child
+        else right child */
+    AVL_Node *temp = cursor;
 
     // updating the balance factor of nodes until cursor != cursorNext
     while (cursor != cursorNext)
@@ -141,8 +137,8 @@ void AVL_Tree::AVL_Insert(int k)
         rebalancingPoint->bf = a; //set the new balance factor in it
         return;
     }
-    //if balance factor of rebalancing point is opposite to the new
-    // balance factor i.e., tree is more balanced now
+    /* if balance factor of rebalancing point is opposite to the new
+     balance factor i.e., tree is more balanced now */
     else if (rebalancingPoint->bf == -1 * a)
     {
         rebalancingPoint->bf = 0;
@@ -150,31 +146,38 @@ void AVL_Tree::AVL_Insert(int k)
     }
     else // rebalancingPoint->bf == a
     {
-        // insertion is done on the same side of temp as that of rebalancing point
-        // so, single rotation is required
+        /* insertion is done on the same side of temp as that of rebalancing point
+           so, single rotation is required */
         if (temp->bf == a)
         {
-            // insertion is done in the left side of rebalancing point
-            // and left side of temp
+            cursor = temp;
+            /* insertion is done in the left side of rebalancing point
+               and left side of temp */
             if (a == 1)
                 AVL_LL_Rotation(rebalancingPoint, temp, a);
-            // insertion is done in the right side of rebalancing point
-            // and right side of temp
+            /* insertion is done in the right side of rebalancing point
+               and right side of temp */
             else if (a == -1)
                 AVL_RR_Rotation(rebalancingPoint, temp, a);
         }
-        // insertion is done on the opposite side of temp as that of rebalancing point
-        //double rotation
+        /* insertion is done on the opposite side of temp as that of rebalancing point
+           double rotation  */
         else if (temp->bf == -1 * a)
         {
-            // insertion is done in the left side of rebalancing point
-            // and right side of temp
+            /* insertion is done in the left side of rebalancing point
+               and right side of temp */
             if (a == 1)
+            {
+                cursor = temp->RChild;
                 AVL_LR_Rotation(rebalancingPoint, temp, a, "insertion");
-            // insertion is done in the right side of rebalancing point
-            // and left side of temp
+            }
+            /* insertion is done in the right side of rebalancing point
+               nd left side of temp */
             else if (a == -1)
+            {
+                cursor = temp->LChild;
                 AVL_RL_Rotation(rebalancingPoint, temp, a, "insertion");
+            }
         }
     }
 
@@ -302,7 +305,7 @@ void AVL_Tree::AVL_Delete(int k)
             head->RChild = curr->RChild;
         else if (curr->key < prev->key) // if node to be deleted is left child of prev
             prev->LChild = nullptr;
-        else // otherwise
+        else // if node to be deleted is right child of prev
             prev->RChild = nullptr;
         // free(curr);
     }
@@ -340,8 +343,8 @@ void AVL_Tree::AVL_Delete(int k)
             temp = temp->LChild;
         }
 
-        // if the right child of curr is itself the
-        // inorder successor of curr
+        /* if the right child of curr is itself the
+            inorder successor of curr */
         if (parOfTemp == nullptr)
             curr->RChild = temp->RChild;
         else
@@ -354,7 +357,7 @@ void AVL_Tree::AVL_Delete(int k)
     // rebalancingPoint points to node where rebalancing may be necessary
     // parent points to parent of rebalancingPoint
     // cursor is used for traversal
-    // temp point to the child of cursor
+    // temp point to the child of rebalancingPoint
     AVL_Node *rebalancingPoint, *parent;
     AVL_Node *temp, *cursor;
 
@@ -540,15 +543,22 @@ int main()
         {
         // Insertion operation
         case 1:
-            cout << "\nEnter the number: ";
-            cin >> userData;
-            if (floor(userData) == userData) // checking whether the input data is a number or not
+            try
             {
-                tree.AVL_Insert(userData);
-                cout << "\nInsertion done successfully.";
+                cout << "\nEnter the number: ";
+                cin >> userData;
+                if (floor(userData) == userData) // checking whether the input data is a number or not
+                {
+                    tree.AVL_Insert(userData);
+                    cout << "\nInsertion done successfully.";
+                }
+                else
+                    cout << "\n Enter a valid integer!!";
             }
-            else
-                cout << "\n Enter a valid integer!!";
+            catch (int x)
+            {
+                cout << x << " is already present in the tree.";
+            }
             break;
 
         // Deletion operation
